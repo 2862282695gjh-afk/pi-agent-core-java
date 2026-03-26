@@ -185,7 +185,7 @@ public class OpenAiClient {
         }
 
         String textContent = textBuilder.toString().isEmpty() ? null : textBuilder.toString();
-        List<Map<String, Object>> toolCallsList = toolCalls.isEmpty() ? null : toolCallsList;
+        List<Map<String, Object>> toolCallsList = toolCalls.isEmpty() ? null : toolCalls;
         return new ChatCompletionAssistantMessage(textContent, toolCallsList);
     }
 
