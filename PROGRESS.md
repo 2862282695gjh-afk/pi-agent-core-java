@@ -83,11 +83,22 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
 | POST | /api/agent/followup | Add follow-up message |
 | DELETE | /api/agent/queue | Clear queued messages |
 
+### Phase 8: LLM Integration with Streaming ✅ COMPLETE
+- [x] AssistantMessageEvent sealed interface (12 event types)
+- [x] OpenAiClient integrated into AgentLoop
+- [x] Support for OpenAI and Anthropic authentication
+- [x] Comprehensive streaming events:
+  - TextStart/TextDelta/TextEnd
+  - ThinkingStart/ThinkingDelta/ThinkingEnd
+  - ToolCallStart/ToolCallDelta/ToolCallEnd
+  - Start/Done/Error events
+- [x] Enhanced error handling and logging
+
 ## Next Steps
-1. Integrate OpenAiClient into AgentLoop for actual LLM responses
-2. Add LLM response event emission (text/thinking/toolcall deltas)
-3. Create integration tests with mock LLM server
-4. Add retry logic and error handling for API failures
+1. Create integration tests with mock LLM server
+2. Add retry logic and error handling for API failures
+3. Add rate limiting and request queuing
+4. Add metrics and monitoring support
 
 ---
-Last updated: 2026-03-26
+Last updated: 2026-03-26 (Phase 8 complete)
