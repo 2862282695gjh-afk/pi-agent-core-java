@@ -69,7 +69,7 @@ public sealed interface AgentEvent permits
     
     record MessageUpdate(
         AgentMessage message,
-        Object assistantMessageEvent
+        AssistantMessageEvent assistantMessageEvent
     ) implements AgentEvent {
         @Override
         public String type() {

@@ -34,6 +34,20 @@ public record AssistantMessage(
             System.currentTimeMillis()
         );
     }
+
+    public AssistantMessage(List<Content> content, String provider, String model, Usage usage, StopReason stopReason, String errorMessage, long timestamp) {
+        this(
+            "assistant",
+            content,
+            null,
+            provider,
+            model,
+            usage,
+            stopReason,
+            errorMessage,
+            timestamp
+        );
+    }
     
     public static AssistantMessage of(String text, String provider, String model) {
         return new AssistantMessage(
