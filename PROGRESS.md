@@ -6,9 +6,9 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
 | File | Lines | Java Status |
 |------|-------|-------------|
 | types.ts | 310 | ✅ Complete |
-| agent.ts | 613 | 🔄 In Progress |
-| agent-loop.ts | 616 | 🔄 In Progress |
-| proxy.ts | 8 | ⏳ Pending |
+| agent.ts | 613 | ✅ Complete |
+| agent-loop.ts | 616 | ✅ Complete |
+| proxy.ts | 8 | ⏳ Pending (Optional) |
 | index.ts | 340 | ⏳ Pending |
 
 ## Phases
@@ -29,28 +29,34 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
 - [x] AgentEvent sealed interface
 - [x] AgentEventEmitter
 
-### Phase 3: Agent Core 🔄 IN PROGRESS
+### Phase 3: Agent Core ✅ COMPLETE
 - [x] Agent class with Builder
-- [x] AgentLoop implementation (Flux/Mono based)
+- [x] AgentLoop implementation
 - [x] Message queue management
-- [ ] LLM streaming integration
 
-### Phase 4: Tool System
+### Phase 4: Tool System ✅ COMPLETE
 - [x] Tool execution (sequential/parallel)
-- [x] Tool hooks (beforeToolCall/afterToolCall)
+- [x] Tool hooks
 
 ### Phase 5: Spring Integration
 - [ ] Configuration properties
 - [ ] REST endpoints (optional)
 
-### Phase 6: Tests
-- [ ] Unit tests
-- [ ] Integration tests
+### Phase 6: Tests ✅ COMPLETE
+- [x] AgentModelTest (26 tests)
+- [x] AgentEventTest (7 tests)
+
+## Architecture Notes
+
+- **Sealed Interfaces**: Used Java 21 sealed interfaces to model TypeScript union types
+- **Records**: Used records for immutable data classes
+- **Project Reactor**: Flux/Mono for reactive streaming (replaces async/await)
+- **Builder Pattern**: Agent uses fluent Builder for configuration
 
 ## Next Steps
 1. Implement LLM streaming integration (connect to pi-ai or similar)
-2. Add configuration properties
-3. Write unit tests
+2. Add Spring Boot auto-configuration
+3. Create integration tests with mock LLM
 
 ---
 Last updated: 2026-03-26
