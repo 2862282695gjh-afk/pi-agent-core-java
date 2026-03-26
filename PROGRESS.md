@@ -52,6 +52,15 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
 - [x] AgentConfigTest (9 tests)
 - **Total: 34 tests passing**
 
+### Phase 7: LLM Client Integration ✅ COMPLETE
+- [x] OpenAiClient with WebClient for HTTP streaming
+- [x] Support for OpenAI, Anthropic, Google, and compatible APIs
+- [x] Chat completion request building (messages, tools, parameters)
+- [x] SSE stream parsing for OpenAI and Anthropic formats
+- [x] DTOs: ChatCompletionRequest, ChatCompletionMessage hierarchy, ToolDefinition
+- [x] AgentLoopConfig enhanced with maxTokens and temperature options
+- [x] Builder pattern for AgentLoopConfig
+
 ## Architecture Notes
 
 - **Sealed Interfaces**: Used Java 21 sealed interfaces to model TypeScript union types
@@ -60,6 +69,7 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
 - **Builder Pattern**: Agent uses fluent Builder for configuration
 - **Spring Boot**: Auto-configuration with `@ConfigurationProperties`
 - **REST API**: WebFlux endpoints with SSE streaming support
+- **LLM Client**: WebClient-based streaming client for OpenAI-compatible APIs
 
 ## REST API Endpoints
 
@@ -74,9 +84,10 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
 | DELETE | /api/agent/queue | Clear queued messages |
 
 ## Next Steps
-1. Implement LLM streaming integration (connect to pi-ai or similar)
-2. Add WebClient-based LLM client
+1. Integrate OpenAiClient into AgentLoop for actual LLM responses
+2. Add LLM response event emission (text/thinking/toolcall deltas)
 3. Create integration tests with mock LLM server
+4. Add retry logic and error handling for API failures
 
 ---
 Last updated: 2026-03-26
