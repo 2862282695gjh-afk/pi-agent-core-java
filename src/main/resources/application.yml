@@ -1,17 +1,16 @@
-spring:
-  application:
-    name: pi-agent-core
-  jackson:
-    default-property-inclusion: non_null
-
-server:
-  port: 8080
-
-logging:
-  level:
-    com.pi.agent: DEBUG
-
 pi:
   agent:
-    default-provider: google
-    default-model: gemini-2.5-flash-lite-preview-06-17
+    model:
+      provider: google
+      id: gemini-2.5-flash-lite-preview-06-17
+    thinking-level: medium
+    tool-execution: parallel
+    system-prompt: "You are a helpful AI assistant."
+  
+llm:
+  base-url: https://generativelanguage.googleapis.com/v1beta/openai
+  api-key: ${GOOGLE_API_KEY}
+  timeout: 120s
+  
+server:
+  port: 8080

@@ -321,6 +321,8 @@ public class Agent {
             thinkingBudgets,
             maxRetryDelayMs,
             toolExecution,
+            null, // maxTokens
+            null, // temperature
             beforeToolCall,
             afterToolCall,
             convertToLlm,
