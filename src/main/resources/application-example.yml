@@ -1,0 +1,56 @@
+# PI Agent Core Configuration Example
+# Copy this file to application.yml and modify as needed
+
+pi:
+  agent:
+    # Enable/disable auto-configuration
+    enabled: true
+    
+    # Model configuration
+    model:
+      id: gpt-4
+      provider: openai
+      # API key can also be set via environment variable: PI_AGENT_MODEL_APIKEY
+      api-key: ${PI_AGENT_MODEL_APIKEY:}
+      base-url: ${PI_AGENT_MODEL_BASEURL:}
+    
+    # System prompt
+    system-prompt: "You are a helpful AI assistant."
+    
+    # Thinking level: off, low, medium, high
+    thinking-level: off
+    
+    # Tool execution mode: parallel, sequential
+    tool-execution: parallel
+    
+    # Transport: sse, websocket
+    transport: sse
+    
+    # Max retry delay for LLM calls
+    max-retry-delay: 30s
+    
+    # Steering configuration
+    steering:
+      mode: one_at_a_time  # all, one_at_a_time
+      messages: []
+    
+    # Follow-up configuration
+    follow-up:
+      mode: one_at_a_time  # all, one_at_a_time
+      messages: []
+    
+    # Tools (declarative registration)
+    tools:
+      - name: example_tool
+        description: An example tool
+        enabled: false
+
+# Server configuration
+server:
+  port: 8080
+
+# Logging
+logging:
+  level:
+    com.pi.agent: DEBUG
+    reactor.netty: INFO

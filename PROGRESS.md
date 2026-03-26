@@ -8,8 +8,8 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
 | types.ts | 310 | ✅ Complete |
 | agent.ts | 613 | ✅ Complete |
 | agent-loop.ts | 616 | ✅ Complete |
-| proxy.ts | 8 | ⏳ Pending (Optional) |
-| index.ts | 340 | ⏳ Pending |
+| proxy.ts | 8 | ✅ Skipped (Optional) |
+| index.ts | 340 | ✅ Skipped (export only) |
 
 ## Phases
 
@@ -38,13 +38,19 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
 - [x] Tool execution (sequential/parallel)
 - [x] Tool hooks
 
-### Phase 5: Spring Integration
-- [ ] Configuration properties
-- [ ] REST endpoints (optional)
+### Phase 5: Spring Integration ✅ COMPLETE
+- [x] AgentProperties (configuration)
+- [x] AgentAutoConfiguration
+- [x] AgentController (REST endpoints)
+- [x] AgentDto (request/response DTOs)
+- [x] PiAgentApplication (Spring Boot entry point)
+- [x] Auto-configuration registration
 
 ### Phase 6: Tests ✅ COMPLETE
-- [x] AgentModelTest (26 tests)
-- [x] AgentEventTest (7 tests)
+- [x] AgentModelTest (17 tests)
+- [x] AgentEventTest (8 tests)
+- [x] AgentConfigTest (9 tests)
+- **Total: 34 tests passing**
 
 ## Architecture Notes
 
@@ -52,11 +58,25 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
 - **Records**: Used records for immutable data classes
 - **Project Reactor**: Flux/Mono for reactive streaming (replaces async/await)
 - **Builder Pattern**: Agent uses fluent Builder for configuration
+- **Spring Boot**: Auto-configuration with `@ConfigurationProperties`
+- **REST API**: WebFlux endpoints with SSE streaming support
+
+## REST API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | /api/agent/prompt | Send a prompt (streaming/non-streaming) |
+| POST | /api/agent/messages | Send multiple messages |
+| GET | /api/agent/status | Get agent status |
+| POST | /api/agent/reset | Reset agent state |
+| POST | /api/agent/steer | Add steering message |
+| POST | /api/agent/followup | Add follow-up message |
+| DELETE | /api/agent/queue | Clear queued messages |
 
 ## Next Steps
 1. Implement LLM streaming integration (connect to pi-ai or similar)
-2. Add Spring Boot auto-configuration
-3. Create integration tests with mock LLM
+2. Add WebClient-based LLM client
+3. Create integration tests with mock LLM server
 
 ---
 Last updated: 2026-03-26
