@@ -87,12 +87,30 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
 - [x] **Total: 43 tests passing** (34 existing + 9 new tests)
 
 ## Next Steps
-1. Add rate limiting and request queuing
-2. Add metrics and monitoring support
-3. Improve error handling in AgentLoop
-4. Add circuit breaker pattern for resilience
-5. Add OpenTelemetry or Micrometer for observability
-6. Add connection pooling for WebClient
+1. Add rate limiting and request queuing - ✅ COMPLETE
+   - RateLimiter.java with token bucket algorithm
+   - RateLimitConfig with configurable parameters
+   - RateLimitPermit for tracking active requests
+
+2. Add metrics and monitoring support - ✅ Complete
+   - RateLimitStats with utilization and rejection rates
+
+3. Add circuit breaker pattern for resilience - ✅ Complete
+   - CircuitBreaker.java with CLOSED/OPEN/half_open states machine
+   - CircuitBreakerConfig with failure threshold and recovery settings
+   - CircuitBreakerStats with success/failure rates
+
+4. Add ResilientOpenAiClient combining all features - ✅ Complete
+   - Integrated rate limiter + circuit breaker + retry
+   - ResilienceMetrics for health monitoring
+   - Support for force open/close for testing
+
+5. Add comprehensive tests - ✅ Complete
+   - RateLimiterTest (9 tests)
+   - CircuitBreakerTest (9 tests)
+   - ResilientOpenAiClientTest (7 tests)
+   - **Total: 25 tests passing**
 
 ---
-Last updated: 2026-03-26 (Phase 9: Integration tests and retry logic complete)
+
+Last updated: 2026-03-26 (Phase 10: Rate limiting and circuit breaker complete)
