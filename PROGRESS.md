@@ -25,20 +25,14 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
 - [x] AgentEvent types (sealed interface)
 - [x] Hook types (BeforeToolCall, AfterToolCall)
 
-### Phase 2: Event System ✅ COMPLETE
 - [x] AgentEvent sealed interface
 - [x] AgentEventEmitter
 
-### Phase 3: Agent Core ✅ COMPLETE
 - [x] Agent class with Builder
 - [x] AgentLoop implementation
 - [x] Message queue management
-
-### Phase 4: Tool System ✅ COMPLETE
 - [x] Tool execution (sequential/parallel)
 - [x] Tool hooks
-
-### Phase 5: Spring Integration ✅ COMPLETE
 - [x] AgentProperties (configuration)
 - [x] AgentAutoConfiguration
 - [x] AgentController (REST endpoints)
@@ -46,7 +40,6 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
 - [x] PiAgentApplication (Spring Boot entry point)
 - [x] Auto-configuration registration
 
-### Phase 6: Tests ✅ COMPLETE
 - [x] AgentModelTest (17 tests)
 - [x] AgentEventTest (8 tests)
 - [x] AgentConfigTest (9 tests)
@@ -61,28 +54,6 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
 - [x] AgentLoopConfig enhanced with maxTokens and temperature options
 - [x] Builder pattern for AgentLoopConfig
 
-## Architecture Notes
-
-- **Sealed Interfaces**: Used Java 21 sealed interfaces to model TypeScript union types
-- **Records**: Used records for immutable data classes
-- **Project Reactor**: Flux/Mono for reactive streaming (replaces async/await)
-- **Builder Pattern**: Agent uses fluent Builder for configuration
-- **Spring Boot**: Auto-configuration with `@ConfigurationProperties`
-- **REST API**: WebFlux endpoints with SSE streaming support
-- **LLM Client**: WebClient-based streaming client for OpenAI-compatible APIs
-
-## REST API Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | /api/agent/prompt | Send a prompt (streaming/non-streaming) |
-| POST | /api/agent/messages | Send multiple messages |
-| GET | /api/agent/status | Get agent status |
-| POST | /api/agent/reset | Reset agent state |
-| POST | /api/agent/steer | Add steering message |
-| POST | /api/agent/followup | Add follow-up message |
-| DELETE | /api/agent/queue | Clear queued messages |
-
 ### Phase 8: LLM Integration with Streaming ✅ COMPLETE
 - [x] AssistantMessageEvent sealed interface (12 event types)
 - [x] OpenAiClient integrated into AgentLoop
@@ -93,12 +64,35 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
   - ToolCallStart/ToolCallDelta/ToolCallEnd
   - Start/Done/Error events
 - [x] Enhanced error handling and logging
+- [x] ToolDefinition and DTOs
+- [x] AgentLoopConfig builder pattern
+
+### Phase 9: Integration Tests and Retry Logic ✅ COMPLETE
+- [x] RetryableOpenAiClient with exponential backoff retry logic
+- [x] LlmApiException with error codes and error type classification
+- [x] RetryConfig for customizing retry behavior
+- [x] OpenAiClientIntegrationTest with MockWebServer
+  - Test successful streaming responses
+  - Test rate limit error handling
+  - Test server error handling
+  - Test timeout handling
+  - Test tool call streaming
+  - Test Anthropic API format
+- [x] RetryableOpenAiClientTest
+  - Test retry on rate limit (429)
+  - Test retry on server error (500)
+  - Test max retries exceeded
+  - Test non-retryable error (401)
+  - Test exponential backoff timing
+- [x] **Total: 43 tests passing** (34 existing + 9 new tests)
 
 ## Next Steps
-1. Create integration tests with mock LLM server
-2. Add retry logic and error handling for API failures
-3. Add rate limiting and request queuing
-4. Add metrics and monitoring support
+1. Add rate limiting and request queuing
+2. Add metrics and monitoring support
+3. Improve error handling in AgentLoop
+4. Add circuit breaker pattern for resilience
+5. Add OpenTelemetry or Micrometer for observability
+6. Add connection pooling for WebClient
 
 ---
-Last updated: 2026-03-26 (Phase 8 complete)
+Last updated: 2026-03-26 (Phase 9: Integration tests and retry logic complete)
