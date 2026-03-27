@@ -319,6 +319,13 @@ public class EnhancedResilientClient {
     }
 
     /**
+     * Get the streaming timeout handler.
+     */
+    public StreamingTimeoutHandler getTimeoutHandler() {
+        return timeoutHandler;
+    }
+
+    /**
      * Comprehensive client statistics.
      */
     public record ClientStats(

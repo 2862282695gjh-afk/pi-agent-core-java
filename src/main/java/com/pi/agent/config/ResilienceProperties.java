@@ -1,7 +1,6 @@
 package com.pi.agent.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.validation.annotation.Valid;
 
 import java.time.Duration;
 
@@ -175,9 +174,9 @@ public class ResilienceProperties {
     public com.pi.agent.llm.RateLimiter.RateLimitConfig toRateLimitConfig() {
         return com.pi.agent.llm.RateLimiter.RateLimitConfig.builder()
             .maxConcurrentRequests(rateLimit.getMaxConcurrentRequests())
-            .tokensPerSecond(rateLimit.getTokensPerSecond())
+            .tokensPerBucket(rateLimit.getTokensPerSecond() * 10) // Convert to bucket size
+            .refillRate(rateLimit.getTokenBucketRefillRate())
             .maxWaitTime(rateLimit.getMaxWaitTime())
-            .tokenBucketRefillRate(rateLimit.getTokenBucketRefillRate())
             .build();
     }
     

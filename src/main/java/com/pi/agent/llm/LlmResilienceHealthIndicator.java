@@ -63,10 +63,8 @@ public class LlmResilienceHealthIndicator implements HealthIndicator {
             return Status.OUT_OF_SERVICE;
         }
         
-        // Low retry success rate is degraded status
-        double retrySuccessRate = stats.retriedRequests() > 0 
-            ? (double) stats.successfulRetries() / stats.retriedRequests() : 0.0;
-        if (retrySuccessRate < 0.5) {
+        // High retry budget utilization is degraded status
+        if (stats.budgetStats().utilization() > 0.8) {
             return Status.OUT_OF_SERVICE;
         }
         
@@ -99,11 +97,9 @@ public class LlmResilienceHealthIndicator implements HealthIndicator {
             "successfulRequests", stats.successfulRequests(),
             "failedRequests", stats.failedRequests(),
             "retriedRequests", stats.retriedRequests(),
-            "retrySuccessRate", String.format("%.2f", 
-                stats.retriedRequests() > 0 
-                    ? (double) stats.successfulRetries() / stats.retriedRequests() : 0.0
-                    : "N/A"),
-            "budgetExhausted", stats.budgetExhaustedRequests()
+            "retryRate", String.format("%.2f", stats.retryRate()),
+            "budgetExhausted", stats.budgetExhaustedRequests(),
+            "budgetUtilization", String.format("%.2f", stats.budgetStats().utilization())
         );
     }
 
