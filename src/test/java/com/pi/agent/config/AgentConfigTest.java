@@ -23,7 +23,8 @@ class AgentConfigTest {
             null,  // transport - should default to sse
             null,  // steering
             null,  // followUp
-            null   // tools
+            null,  // tools
+            null   // llm - should default to LlmConfig with defaults
         );
         
         assertEquals("gpt-4", props.model().id());

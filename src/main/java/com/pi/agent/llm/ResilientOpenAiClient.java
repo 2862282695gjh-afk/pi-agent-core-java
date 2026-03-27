@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * - Rate limiting with token bucket algorithm
  * - Circuit breaker pattern for failure protection
  * - Automatic retry with exponential backoff
+ * - Optional Micrometer metrics integration
  * 
  * Use this client for production workloads requiring high availability.
  */
@@ -29,12 +30,25 @@ public class ResilientOpenAiClient {
     private final RetryConfig retryConfig;
     private final RateLimiter rateLimiter;
     private final CircuitBreaker circuitBreaker;
+    private final LlmMetrics metrics;
+    private final AtomicInteger totalRetries = new AtomicInteger(0);
+    private final AtomicInteger successfulRetries = new AtomicInteger(0);
 
     public ResilientOpenAiClient(
         OpenAiClient delegate,
         RetryConfig retryConfig,
         RateLimiter.RateLimitConfig rateLimitConfig,
         CircuitBreaker.CircuitBreakerConfig circuitBreakerConfig
+    ) {
+        this(delegate, retryConfig, rateLimitConfig, circuitBreakerConfig, null);
+    }
+
+    public ResilientOpenAiClient(
+        OpenAiClient delegate,
+        RetryConfig retryConfig,
+        RateLimiter.RateLimitConfig rateLimitConfig,
+        CircuitBreaker.CircuitBreakerConfig circuitBreakerConfig,
+        LlmMetrics metrics
     ) {
         this.delegate = delegate;
         this.retryConfig = retryConfig != null ? retryConfig : new RetryConfig();
@@ -43,6 +57,7 @@ public class ResilientOpenAiClient {
         this.circuitBreaker = new CircuitBreaker("llm-client", 
             circuitBreakerConfig != null ? circuitBreakerConfig : 
             CircuitBreaker.CircuitBreakerConfig.builder().build());
+        this.metrics = metrics;
     }
 
     public ResilientOpenAiClient(String baseUrl, String apiKey) {
@@ -66,11 +81,13 @@ public class ResilientOpenAiClient {
         AgentLoopConfig config
     ) {
         AtomicInteger attemptCount = new AtomicInteger(0);
+        final String requestId = metrics != null ? metrics.startRequest(model.id(), model.provider()) : null;
+        final long startTime = System.nanoTime();
 
         return Mono.fromCallable(() -> rateLimiter.acquire())
             .flatMap(mono -> mono) // Unwrap the Mono<RateLimitPermit>
             .flatMapMany(permit -> 
-                executeWithCircuitBreaker(model, context, config, attemptCount)
+                executeWithCircuitBreaker(model, context, config, attemptCount, requestId)
                     .doOnTerminate(() -> {
                         permit.release();
                         log.debug("Released rate limit permit");
@@ -81,8 +98,19 @@ public class ResilientOpenAiClient {
                     })
             )
             .doOnSubscribe(s -> log.info("Starting resilient LLM request for model: {}", model.id()))
-            .doOnComplete(() -> log.info("Resilient LLM request completed successfully"))
-            .doOnError(e -> log.error("Resilient LLM request failed: {}", e.getMessage()));
+            .doOnComplete(() -> {
+                log.info("Resilient LLM request completed successfully");
+                if (metrics != null && requestId != null) {
+                    metrics.recordSuccess(requestId, model.id(), model.provider());
+                }
+            })
+            .doOnError(e -> {
+                log.error("Resilient LLM request failed: {}", e.getMessage());
+                if (metrics != null && requestId != null) {
+                    String errorType = e instanceof LlmApiException lle ? lle.getErrorCode().name() : "UNKNOWN";
+                    metrics.recordFailure(requestId, model.id(), model.provider(), errorType);
+                }
+            });
     }
 
     /**
@@ -92,13 +120,17 @@ public class ResilientOpenAiClient {
         AgentState.ModelInfo model,
         AgentContext context,
         AgentLoopConfig config,
-        AtomicInteger attemptCount
+        AtomicInteger attemptCount,
+        String requestId
     ) {
         return Flux.defer(() -> {
                 CircuitBreaker.State state = circuitBreaker.getState();
                 
                 switch (state) {
                     case OPEN:
+                        if (metrics != null) {
+                            metrics.recordCircuitOpen();
+                        }
                         CircuitBreaker.CircuitBreakerStats stats = circuitBreaker.getStats();
                         Duration retryAfter = retryConfig.maxBackoff();
                         
@@ -116,7 +148,7 @@ public class ResilientOpenAiClient {
                     case HALF_OPEN:
                     case CLOSED:
                     default:
-                        return executeWithRetry(model, context, config, attemptCount)
+                        return executeWithRetry(model, context, config, attemptCount, requestId)
                             .doOnNext(event -> {
                                 // Record success for circuit breaker
                                 if (event instanceof AssistantMessageEvent.Done) {
@@ -151,6 +183,12 @@ public class ResilientOpenAiClient {
                 // Record failure for circuit breaker
                 recordCircuitBreakerFailure();
 
+                // Record retry attempt
+                totalRetries.incrementAndGet();
+                if (metrics != null) {
+                    metrics.recordRetryAttempt(false);
+                }
+
                 Duration backoff = calculateBackoff(attempt);
                 log.warn("LLM API call failed (attempt {}/{}): {}. Retrying in {}ms...",
                     attempt, retryConfig.maxRetries(), llmError.getMessage(), backoff.toMillis());
@@ -166,12 +204,20 @@ public class ResilientOpenAiClient {
         AgentState.ModelInfo model,
         AgentContext context,
         AgentLoopConfig config,
-        AtomicInteger attemptCount
+        AtomicInteger attemptCount,
+        String requestId
     ) {
         return delegate.streamCompletion(model, context, config)
             .doOnComplete(() -> {
                 // Record success
                 recordCircuitBreakerSuccess();
+                // Record successful retry if this was a retry
+                if (attemptCount.get() > 0) {
+                    successfulRetries.incrementAndGet();
+                    if (metrics != null) {
+                        metrics.recordRetryAttempt(true);
+                    }
+                }
             })
             .doOnError(e -> {
                 // Record failure
@@ -272,12 +318,33 @@ public class ResilientOpenAiClient {
     }
 
     /**
+     * Combined resilience metrics.
+     */
+    public record ResilienceMetrics(
+        RateLimiter.RateLimitStats rateLimitStats,
+        CircuitBreaker.CircuitBreakerStats circuitBreakerStats,
+        long totalRetries,
+        long successfulRetries
+    ) {
+        public boolean isHealthy() {
+            return circuitBreakerStats.state() != CircuitBreaker.State.OPEN &&
+                   rateLimitStats.utilization() < 0.9;
+        }
+
+        public double retrySuccessRate() {
+            return totalRetries > 0 ? (double) successfulRetries / totalRetries : 0.0;
+        }
+    }
+
+    /**
      * Get resilience metrics for monitoring.
      */
     public ResilienceMetrics getMetrics() {
         return new ResilienceMetrics(
             rateLimiter.getStats(),
-            circuitBreaker.getStats()
+            circuitBreaker.getStats(),
+            totalRetries.get(),
+            successfulRetries.get()
         );
     }
 
@@ -300,18 +367,5 @@ public class ResilientOpenAiClient {
      */
     public OpenAiClient getDelegate() {
         return delegate;
-    }
-
-    /**
-     * Combined resilience metrics.
-     */
-    public record ResilienceMetrics(
-        RateLimiter.RateLimitStats rateLimitStats,
-        CircuitBreaker.CircuitBreakerStats circuitBreakerStats
-    ) {
-        public boolean isHealthy() {
-            return circuitBreakerStats.state() != CircuitBreaker.State.OPEN &&
-                   rateLimitStats.utilization() < 0.9;
-        }
     }
 }

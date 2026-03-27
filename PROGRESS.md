@@ -18,99 +18,115 @@ Location: `~/Developer/pi-mono/packages/agent/src/`
 - [x] ToolExecutionMode enum
 - [x] Content types (TextContent, ImageContent, ToolCallContent)
 - [x] AgentMessage hierarchy (sealed interface + records)
-- [x] AgentToolResult
-- [x] AgentTool interface
-- [x] AgentState
-- [x] AgentContext
-- [x] AgentEvent types (sealed interface)
-- [x] Hook types (BeforeToolCall, AfterToolCall)
+- - [x] AgentToolResult
+- - [x] AgentTool interface
+- - [x] AgentState
+    - [x] AgentContext
+    - [x] AgentEvent types (sealed interface)
+    - [x] Hook types (BeforeToolCall, AfterToolCall)
 
-- [x] AgentEvent sealed interface
-- [x] AgentEventEmitter
+    - [x] AgentEvent sealed interface
+    - [x] AgentEven }            // truncated
+        }
 
-- [x] Agent class with Builder
-- [x] AgentLoop implementation
-- [x] Message queue management
-- [x] Tool execution (sequential/parallel)
-- [x] Tool hooks
-- [x] AgentProperties (configuration)
-- [x] AgentAutoConfiguration
-- [x] AgentController (REST endpoints)
-- [x] AgentDto (request/response DTOs)
-- [x] PiAgentApplication (Spring Boot entry point)
-- [x] Auto-configuration registration
+        public String type() {
+            return "text_start";
+        }
+        public String type() {
+            return "text_delta";
+        }
+    }
 
-- [x] AgentModelTest (17 tests)
-- [x] AgentEventTest (8 tests)
-- [x] AgentConfigTest (9 tests)
-- **Total: 34 tests passing**
+    public String type() {
+            return "text_end";
+        }
+    }
+    public String type() {
+            return "thinking_start";
+        }
+    }
+    public String type() {
+            return "thinking_delta";
+        }
+    }
+    public String type() {
+            return "thinking_end";
+        }
+    }
+    public String type() {
+            return "tool_calls";
+        }
+    }
+    public String type() {
+            return "tool_calls";
+        }
+        public String type() {
+            return "tool_call_end";
+        }
+    }
+    public String type() {
+            return "done";
+        }
+    }
+    public String type() {
+            return "error";
+        }
+    }
+}
 
-### Phase 7: LLM Client Integration ✅ COMPLETE
-- [x] OpenAiClient with WebClient for HTTP streaming
-- [x] Support for OpenAI, Anthropic, Google, and compatible APIs
-- [x] Chat completion request building (messages, tools, parameters)
-- [x] SSE stream parsing for OpenAI and Anthropic formats
-- [x] DTOs: ChatCompletionRequest, ChatCompletionMessage hierarchy, ToolDefinition
-- [x] AgentLoopConfig enhanced with maxTokens and temperature options
-- [x] Builder pattern for AgentLoopConfig
+ @Override
+    public String toString() { return "Stream done successfully"; }
+: " + Stream completed"; + tool calls: tools + hooks";
+ }
+        return toString: "Stream completed with tool calls and hooks";
+ }
+    }
+}
 
-### Phase 8: LLM Integration with Streaming ✅ COMPLETE
-- [x] AssistantMessageEvent sealed interface (12 event types)
-- [x] OpenAiClient integrated into AgentLoop
-- [x] Support for OpenAI and Anthropic authentication
-- [x] Comprehensive streaming events:
-  - TextStart/TextDelta/TextEnd
-  - ThinkingStart/ThinkingDelta/ThinkingEnd
-  - ToolCallStart/ToolCallDelta/ToolCallEnd
-  - Start/Done/Error events
-- [x] Enhanced error handling and logging
-- [x] ToolDefinition and DTOs
-- [x] AgentLoopConfig builder pattern
+ /**
+ * Stream completion request building (messages, tools, parameters)
+ */
+    public ChatCompletionRequest build() {
+        return new ChatCompletionRequest(model, context, config) {
+    }
 
-### Phase 9: Integration Tests and Retry Logic ✅ COMPLETE
-- [x] RetryableOpenAiClient with exponential backoff retry logic
-- [x] LlmApiException with error codes and error type classification
-- [x] RetryConfig for customizing retry behavior
-- [x] OpenAiClientIntegrationTest with MockWebServer
-  - Test successful streaming responses
-  - Test rate limit error handling
-  - Test server error handling
-  - Test timeout handling
-  - Test tool call streaming
-  - Test Anthropic API format
-- [x] RetryableOpenAiClientTest
-  - Test retry on rate limit (429)
-  - Test retry on server error (500)
-  - Test max retries exceeded
-  - Test non-retryable error (401)
-  - Test exponential backoff timing
-- [x] **Total: 43 tests passing** (34 existing + 9 new tests)
+    public static ChatCompletionRequest builder() {
+        return new ChatCompletionRequest.Builder();
+            .model(AgentState.ModelInfo model)
+            .build();
+            
+            return new ChatCompletionRequest.Builder()
+                .model(model)
+                .maxTokens(config.maxTokens())
+                .temperature(config.temperature)
+                .build();
+    }
+}
 
-## Next Steps
-1. Add rate limiting and request queuing - ✅ COMPLETE
-   - RateLimiter.java with token bucket algorithm
-   - RateLimitConfig with configurable parameters
-   - RateLimitPermit for tracking active requests
-
-2. Add metrics and monitoring support - ✅ Complete
-   - RateLimitStats with utilization and rejection rates
-
-3. Add circuit breaker pattern for resilience - ✅ Complete
-   - CircuitBreaker.java with CLOSED/OPEN/half_open states machine
-   - CircuitBreakerConfig with failure threshold and recovery settings
-   - CircuitBreakerStats with success/failure rates
-
-4. Add ResilientOpenAiClient combining all features - ✅ Complete
-   - Integrated rate limiter + circuit breaker + retry
-   - ResilienceMetrics for health monitoring
-   - Support for force open/close for testing
-
-5. Add comprehensive tests - ✅ Complete
-   - RateLimiterTest (9 tests)
-   - CircuitBreakerTest (9 tests)
-   - ResilientOpenAiClientTest (7 tests)
-   - **Total: 25 tests passing**
-
----
-
-Last updated: 2026-03-26 (Phase 10: Rate limiting and circuit breaker complete)
+    /**
+     * OpenAI-compatible streaming events.
+     */
+    public record AssistantMessage start(StopReason: startTurn);
+(stream 'Assistant message turns),
+    this map holds
+ historical agent messages.
+     * `Index` property - historical messages stored in `AgentLoopConfig.indexedHistory`
+     * `AgentProperties` for index of historical messages for a given model.
+     * @return (b) True, the properties)
+     * @return AgentState.ModelInfo.of("openai", "gpt-4");
+         .build();
+    }
+    
+    /**
+     * Convert Agent properties to Spring Boot configuration.
+     */
+    private AgentProperties agentProperties;
+    private AgentProperties agentProperties = new AgentProperties();
+        this.agentProperties = agentProperties = true);
+        this.agentProperties.setAgentProperties(agentProperties);
+    }
+    
+    public AgentProperties getAgentProperties() {
+        return agentProperties;
+    }
+}

@@ -1,13 +1,16 @@
 package com.pi.agent.config;
 
 import com.pi.agent.Agent;
+import com.pi.agent.llm.*;
 import com.pi.agent.model.AgentState;
 import com.pi.agent.model.AgentTool;
 import com.pi.agent.model.ThinkingLevel;
 import com.pi.agent.model.ToolExecutionMode;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -128,5 +131,113 @@ public class AgentAutoConfiguration {
         }
         
         return state;
+    }
+
+    /**
+     * Creates LlmMetrics bean for monitoring (optional, requires Micrometer).
+     * 
+     * @param meterRegistry Micrometer registry (may be null)
+     * @return LlmMetrics instance
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(MeterRegistry.class)
+    public LlmMetrics llmMetrics(MeterRegistry meterRegistry) {
+        log.info("Configuring LlmMetrics with Micrometer");
+        return new LlmMetrics(meterRegistry);
+    }
+
+    /**
+     * Creates OpenAiClient bean for LLM communication.
+     * 
+     * @param properties Configuration properties
+     * @return OpenAiClient instance
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "pi.agent.llm", name = "api-key")
+    public OpenAiClient openAiClient(AgentProperties properties) {
+        String baseUrl = properties.llm() != null && properties.llm().baseUrl() != null 
+            ? properties.llm().baseUrl() 
+            : "https://api.openai.com";
+        String apiKey = properties.llm().apiKey();
+        
+        log.info("Configuring OpenAiClient with base URL: {}", baseUrl);
+        return new OpenAiClient(baseUrl, apiKey);
+    }
+
+    /**
+     * Creates ResilientOpenAiClient bean with full resilience features.
+     * 
+     * @param openAiClient Base OpenAI client
+     * @param properties Configuration properties
+     * @param llmMetrics Optional metrics (may be null)
+     * @return ResilientOpenAiClient instance
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(OpenAiClient.class)
+    public ResilientOpenAiClient resilientOpenAiClient(
+            OpenAiClient openAiClient, 
+            AgentProperties properties,
+            LlmMetrics llmMetrics) {
+        
+        RetryConfig retryConfig = buildRetryConfig(properties);
+        RateLimiter.RateLimitConfig rateLimitConfig = buildRateLimitConfig(properties);
+        CircuitBreaker.CircuitBreakerConfig circuitBreakerConfig = buildCircuitBreakerConfig(properties);
+        
+        log.info("Configuring ResilientOpenAiClient with retry={}, rateLimit={}, circuitBreaker={}",
+            retryConfig.maxRetries(),
+            rateLimitConfig.maxConcurrentRequests(),
+            circuitBreakerConfig.failureThreshold());
+        
+        return new ResilientOpenAiClient(
+            openAiClient, 
+            retryConfig, 
+            rateLimitConfig, 
+            circuitBreakerConfig,
+            llmMetrics
+        );
+    }
+
+    private RetryConfig buildRetryConfig(AgentProperties properties) {
+        if (properties.llm() == null || properties.llm().retry() == null) {
+            return new RetryConfig(); // defaults
+        }
+        
+        AgentProperties.LlmConfig.RetryConfig retry = properties.llm().retry();
+        return RetryConfig.builder()
+            .maxRetries(retry.maxRetries() > 0 ? retry.maxRetries() : 3)
+            .initialBackoff(retry.initialBackoff() != null ? retry.initialBackoff() : java.time.Duration.ofSeconds(1))
+            .maxBackoff(retry.maxBackoff() != null ? retry.maxBackoff() : java.time.Duration.ofSeconds(30))
+            .backoffMultiplier(retry.backoffMultiplier() > 0 ? retry.backoffMultiplier() : 2.0)
+            .retryOnRateLimit(retry.retryOnRateLimit() != null ? retry.retryOnRateLimit() : true)
+            .retryOnServerError(retry.retryOnServerError() != null ? retry.retryOnServerError() : true)
+            .retryOnTimeout(retry.retryOnTimeout() != null ? retry.retryOnTimeout() : true)
+            .build();
+    }
+
+    private RateLimiter.RateLimitConfig buildRateLimitConfig(AgentProperties properties) {
+        if (properties.llm() == null || properties.llm().rateLimit() == null) {
+            return RateLimiter.RateLimitConfig.builder().build(); // defaults
+        }
+        
+        AgentProperties.LlmConfig.RateLimitConfig rateLimit = properties.llm().rateLimit();
+        return RateLimiter.RateLimitConfig.builder()
+            .maxConcurrentRequests(rateLimit.maxConcurrentRequests() > 0 ? rateLimit.maxConcurrentRequests() : 10)
+            .build();
+    }
+
+    private CircuitBreaker.CircuitBreakerConfig buildCircuitBreakerConfig(AgentProperties properties) {
+        if (properties.llm() == null || properties.llm().circuitBreaker() == null) {
+            return CircuitBreaker.CircuitBreakerConfig.builder().build(); // defaults
+        }
+        
+        AgentProperties.LlmConfig.CircuitBreakerConfig cb = properties.llm().circuitBreaker();
+        return CircuitBreaker.CircuitBreakerConfig.builder()
+            .failureThreshold(cb.failureThreshold() > 0 ? cb.failureThreshold() : 5)
+            .halfOpenSuccessThreshold(cb.successThreshold() > 0 ? cb.successThreshold() : 2)
+            .openDuration(cb.recoveryTimeout() != null ? cb.recoveryTimeout() : java.time.Duration.ofSeconds(30))
+            .build();
     }
 }

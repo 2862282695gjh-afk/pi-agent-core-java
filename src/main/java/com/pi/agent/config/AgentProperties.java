@@ -28,6 +28,19 @@ import java.util.List;
  *     tool-execution: parallel
  *     max-retry-delay: 30s
  *     transport: sse
+ *     llm:
+ *       api-key: ${OPENAI_API_KEY}
+ *       base-url: https://api.openai.com
+ *       retry:
+ *         max-retries: 3
+ *         initial-backoff: 1s
+ *         max-backoff: 30s
+ *       rate-limit:
+ *         max-concurrent-requests: 10
+ *         queue-size: 100
+ *       circuit-breaker:
+ *         failure-threshold: 5
+ *         recovery-timeout: 30s
  * </pre>
  */
 @Validated
@@ -41,7 +54,8 @@ public record AgentProperties(
     String transport,
     SteeringConfig steering,
     FollowUpConfig followUp,
-    List<ToolConfig> tools
+    List<ToolConfig> tools,
+    LlmConfig llm
 ) {
     
     public AgentProperties {
@@ -63,6 +77,9 @@ public record AgentProperties(
         }
         if (tools == null) {
             tools = new ArrayList<>();
+        }
+        if (llm == null) {
+            llm = new LlmConfig(null, null, null, null, null);
         }
     }
     
@@ -136,5 +153,63 @@ public record AgentProperties(
                 description = "";
             }
         }
+    }
+
+    /**
+     * LLM client configuration for resilience features.
+     * @param apiKey API key for LLM provider
+     * @param baseUrl Base URL for API endpoint
+     * @param retry Retry configuration
+     * @param rateLimit Rate limiting configuration
+     * @param circuitBreaker Circuit breaker configuration
+     */
+    public record LlmConfig(
+        String apiKey,
+        String baseUrl,
+        RetryConfig retry,
+        RateLimitConfig rateLimit,
+        CircuitBreakerConfig circuitBreaker
+    ) {
+        public LlmConfig {
+            if (retry == null) {
+                retry = new RetryConfig(3, Duration.ofSeconds(1), Duration.ofSeconds(30), 2.0, true, true, true);
+            }
+            if (rateLimit == null) {
+                rateLimit = new RateLimitConfig(10, 100);
+            }
+            if (circuitBreaker == null) {
+                circuitBreaker = new CircuitBreakerConfig(5, 3, Duration.ofSeconds(30));
+            }
+        }
+
+        /**
+         * Retry configuration.
+         */
+        public record RetryConfig(
+            int maxRetries,
+            Duration initialBackoff,
+            Duration maxBackoff,
+            double backoffMultiplier,
+            Boolean retryOnRateLimit,
+            Boolean retryOnServerError,
+            Boolean retryOnTimeout
+        ) {}
+
+        /**
+         * Rate limiting configuration.
+         */
+        public record RateLimitConfig(
+            int maxConcurrentRequests,
+            int tokensPerBucket
+        ) {}
+
+        /**
+         * Circuit breaker configuration.
+         */
+        public record CircuitBreakerConfig(
+            int failureThreshold,
+            int successThreshold,
+            Duration recoveryTimeout
+        ) {}
     }
 }
